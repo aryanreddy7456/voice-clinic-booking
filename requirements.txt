@@ -1,0 +1,5 @@
+pipecat-ai[elevenlabs,google,silero,webrtc]==0.0.108
+google-genai==1.75.0  # pinned: the 2.x SDK breaks pipecat 0.0.108 tool calling on some setups
+fastapi
+uvicorn[standard]
+python-dotenv

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>City Care Clinic - Admin</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+  <style>
+    .admin-section { margin-bottom: 32px; }
+    .admin-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .admin-table th, .admin-table td { text-align: left; padding: 6px 10px; border-bottom: 1px solid #2a3550; }
+    .admin-table th { color: #7dd3fc; font-weight: 600; }
+    .del-btn { background: #7f1d1d; color: #fecaca; border: none; border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+    .del-btn:hover { background: #991b1b; }
+    .call-row { cursor: pointer; }
+    .call-row:hover { background: #1e293b; }
+    .transcript-box { background: #0f172a; border: 1px solid #2a3550; border-radius: 8px; padding: 20px; margin: 10px 0 20px; white-space: pre-wrap; font-size: 17px; line-height: 1.9; min-height: 55vh; }
+    .transcript-box .turn { margin-bottom: 10px; }
+    .transcript-box .u { color: #a5b4fc; }
+    .transcript-box .a { color: #6ee7b7; }
+    .transcript-box .e { color: #f87171; font-style: italic; }
+    .transcript-box .t { color: #64748b; font-size: 13px; margin-right: 8px; }
+    #loginBox { margin: 40px auto; max-width: 360px; text-align: center; }
+    #loginBox input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #2a3550; background: #0f172a; color: #e2e8f0; margin-bottom: 10px; }
+    #loginBox button { padding: 10px 24px; border: none; border-radius: 8px; background: #0ea5e9; color: #fff; cursor: pointer; }
+    #loginError { color: #f87171; margin-top: 8px; min-height: 18px; }
+    .hidden { display: none; }
+    .doc-form { border: 1px solid #2a3550; border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+    .doc-form .days label { margin-right: 10px; font-size: 13px; color: #cbd5e1; }
+    .doc-form input[type="time"] { background: #0f172a; color: #e2e8f0; border: 1px solid #2a3550; border-radius: 6px; padding: 4px 8px; margin: 8px 6px 8px 0; }
+    .save-btn { padding: 6px 16px; border: none; border-radius: 6px; background: #0ea5e9; color: #fff; cursor: pointer; }
+    .doc-msg { font-size: 13px; margin-left: 10px; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>City Care Clinic - Admin</h1>
+    <p style="color:#94a3b8">Staff only: manage appointments and saved call transcripts. (Demo password check, not real security.)</p>
+
+    <div id="loginBox">
+      <input id="tokenInput" type="password" placeholder="Admin password (ADMIN_TOKEN from .env)" />
+      <button id="loginBtn">Log in</button>
+      <div id="loginError"></div>
+    </div>
+
+    <div id="adminContent" class="hidden">
+      <div class="admin-section">
+        <h2>Doctor schedules</h2>
+        <p style="color:#94a3b8">Change a doctor's working days and hours. The public dashboard and the voice bot use the new timings right away.</p>
+        <div id="doctorForms"></div>
+      </div>
+
+      <div class="admin-section">
+        <h2>Appointments</h2>
+        <table class="admin-table" id="apptTable">
+          <thead><tr><th>Doctor</th><th>Speciality</th><th>Date</th><th>Time</th><th>Phone</th><th>Status</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="admin-section">
+        <h2>Saved call transcripts</h2>
+        <table class="admin-table" id="callsTable">
+          <thead><tr><th>Call</th><th>Started</th><th>Ended</th><th>Lines</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div id="transcriptArea"></div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    let token = sessionStorage.getItem("adminToken") || "";
+
+    async function api(path, opts = {}) {
+      const res = await fetch(path, { ...opts, headers: { "X-Admin-Token": token } });
+      if (res.status === 401) { showLogin("Wrong password."); throw new Error("unauthorized"); }
+      if (!res.ok) { alert("Request failed: " + res.status); throw new Error("failed"); }
+      return res.json();
+    }
+
+    function showLogin(msg = "") {
+      document.getElementById("loginBox").classList.remove("hidden");
+      document.getElementById("adminContent").classList.add("hidden");
+      document.getElementById("loginError").textContent = msg;
+    }
+
+    async function loadAll() {
+      document.getElementById("loginBox").classList.add("hidden");
+      document.getElementById("adminContent").classList.remove("hidden");
+      const { appointments } = await api("/api/admin/appointments");
+      const ab = document.querySelector("#apptTable tbody");
+      ab.innerHTML = "";
+      for (const a of appointments) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${a.doctor}</td><td>${a.speciality}</td><td>${a.date}</td><td>${a.time}</td>
+          <td>${a.phone}</td><td>${a.status}</td>
+          <td><button class="del-btn">Delete</button></td>`;
+        tr.querySelector("button").onclick = async () => {
+          if (!confirm(`Delete the ${a.date} ${a.time} appointment with ${a.doctor}? The slot becomes free again.`)) return;
+          await api(`/api/admin/appointments/${a.id}`, { method: "DELETE" });
+          loadAll();
+        };
+        ab.appendChild(tr);
+      }
+      if (!appointments.length) ab.innerHTML = '<tr><td colspan="7">No appointments yet.</td></tr>';
+
+      const { calls } = await api("/api/admin/calls");
+      const cb = document.querySelector("#callsTable tbody");
+      cb.innerHTML = "";
+      for (const c of calls) {
+        const tr = document.createElement("tr");
+        tr.className = "call-row";
+        tr.innerHTML = `<td>Call #${c.id}</td><td>${c.started_at}</td><td>${c.ended_at || "(still open)"}</td>
+          <td>${c.line_count}</td><td><button class="del-btn">Delete</button></td>`;
+        tr.onclick = (e) => { if (e.target.tagName !== "BUTTON") showTranscript(c.id); };
+        tr.querySelector("button").onclick = async () => {
+          if (!confirm(`Delete call #${c.id} and its whole transcript?`)) return;
+          await api(`/api/admin/calls/${c.id}`, { method: "DELETE" });
+          document.getElementById("transcriptArea").innerHTML = "";
+          loadAll();
+        };
+        cb.appendChild(tr);
+      }
+      if (!calls.length) cb.innerHTML = '<tr><td colspan="5">No calls recorded yet.</td></tr>';
+
+      const { doctors } = await api("/api/admin/doctors");
+      const df = document.getElementById("doctorForms");
+      df.innerHTML = "";
+      const ALL_DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+      for (const d of doctors) {
+        const div = document.createElement("div");
+        div.className = "doc-form";
+        const docDays = d.days.split(",");
+        div.innerHTML = `<b>${d.name}</b> <span style="color:#94a3b8">(${d.speciality})</span><br>
+          <div class="days">${ALL_DAYS.map((day) =>
+            `<label><input type="checkbox" value="${day}" ${docDays.includes(day) ? "checked" : ""}> ${day.slice(0,3)}</label>`).join("")}</div>
+          <input type="time" class="startT" value="${d.start}"> to
+          <input type="time" class="endT" value="${d.end}">
+          <button class="save-btn">Save</button><span class="doc-msg"></span>`;
+        div.querySelector(".save-btn").onclick = async () => {
+          const days = [...div.querySelectorAll('.days input:checked')].map((c) => c.value);
+          const start = div.querySelector(".startT").value;
+          const end = div.querySelector(".endT").value;
+          const msg = div.querySelector(".doc-msg");
+          try {
+            const r = await api(`/api/admin/doctors/${d.id}/schedule`, {
+              method: "PUT", headers: { "X-Admin-Token": token, "Content-Type": "application/json" },
+              body: JSON.stringify({ days, start, end }),
+            });
+            msg.style.color = "#6ee7b7"; msg.textContent = r.message;
+          } catch (e) { msg.style.color = "#f87171"; msg.textContent = "Could not save."; }
+        };
+        df.appendChild(div);
+      }
+    }
+
+    async function showTranscript(callId) {
+      const data = await api(`/api/admin/calls/${callId}`);
+      const box = document.createElement("div");
+      box.className = "transcript-box";
+      box.innerHTML = `<b>Call #${data.call.id}</b> - started ${data.call.started_at}<br><br>` +
+        (data.lines.length
+          ? data.lines.map((l) => {
+              const who = l.role === "user" ? ["u", "Caller"] : l.role === "error" ? ["e", "System"] : ["a", "Agent"];
+              return `<div class="turn"><span class="t">${l.ts.slice(11)}</span><span class="${who[0]}"><b>${who[1]}:</b> ${l.content}</span></div>`;
+            }).join("")
+          : "(no lines saved for this call)");
+      const area = document.getElementById("transcriptArea");
+      area.innerHTML = "";
+      area.appendChild(box);
+      box.scrollIntoView({ behavior: "smooth" });
+    }
+
+    document.getElementById("loginBtn").onclick = () => {
+      token = document.getElementById("tokenInput").value.trim();
+      sessionStorage.setItem("adminToken", token);
+      loadAll().catch(() => {});
+    };
+    document.getElementById("tokenInput").addEventListener("keydown", (e) => { if (e.key === "Enter") document.getElementById("loginBtn").click(); });
+
+    if (token) loadAll().catch(() => {});
+  </script>
+</body>
+</html>

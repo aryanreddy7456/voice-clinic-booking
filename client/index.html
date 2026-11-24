@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>City Care Clinic</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark"></span>
+      <span class="brand-name">City Care Clinic</span>
+    </div>
+    <button id="callBtn" class="call-btn">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24 11.36 11.36 0 0 0 3.57.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.36 11.36 0 0 0 .57 3.57 1 1 0 0 1-.25 1.02l-2.2 2.2Z"/></svg>
+      Try a call
+    </button>
+  </header>
+
+  <main class="grid">
+    <section class="panel">
+      <h2>Doctors</h2>
+      <div id="doctors" class="cards"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Appointments</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Doctor</th><th>Date</th><th>Time</th><th>Phone</th><th>Status</th></tr>
+          </thead>
+          <tbody id="appointments"></tbody>
+        </table>
+        <p id="noAppointments" class="empty">No appointments yet. Call Aria to book one.</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Phone-style call screen -->
+  <div id="phoneOverlay" class="overlay hidden">
+    <div class="phone" id="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-status" id="callStatus">Calling…</div>
+      <div class="phone-avatar" id="avatar">
+        <div class="wave" id="wave"><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+      <div class="phone-name">Aria · City Care</div>
+      <div class="phone-timer" id="callTimer">00:00</div>
+      <div class="phone-transcript" id="transcript"></div>
+      <div class="phone-actions">
+        <button id="muteBtn" class="round-btn" title="Mute">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2Z"/></svg>
+        </button>
+        <button id="endBtn" class="round-btn end" title="End call">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08a.996.996 0 0 1 0-1.41C3.4 8.54 7.49 7 12 7s8.6 1.54 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.1-.7-.28a11.27 11.27 0 0 0-2.67-1.85.996.996 0 0 1-.56-.9v-3.1C15.15 9.25 13.6 9 12 9Z"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/static/app.js"></script>
+</body>
+</html>
