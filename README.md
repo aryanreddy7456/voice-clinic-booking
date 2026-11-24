@@ -75,3 +75,6 @@ This is a simple shared-password check for a local demo, not real login security
 
 - One browser call at a time is expected; each call gets its own pipeline.
 - The database is a demo store. Delete `data/clinic.db` to reset all appointments.
+
+## How I built it
+I built this project with AI assistance (an AI assistant helped me write and debug the code). I made the design decisions, tested every flow 
